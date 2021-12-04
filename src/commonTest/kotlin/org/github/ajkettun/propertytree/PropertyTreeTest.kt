@@ -47,7 +47,7 @@ class PropertyTreeTest {
                 )
             )
 
-        assertEquals(expected, actual);
+        assertEquals(expected, actual)
     }
 
     @Test

@@ -1,3 +1,3 @@
 package org.github.ajkettun.propertytree
 
-const val EMPTY = "empty"
+val EMPTY = PropertyName("empty")

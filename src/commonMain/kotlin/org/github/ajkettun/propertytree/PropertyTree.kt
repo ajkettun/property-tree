@@ -6,10 +6,12 @@ private val EMPTY_PROPERTY: Property = Property(EMPTY, null, linkedSetOf())
 
 data class PropertyName(val value: String)
 
-fun byName(name: String): (PropertyTree) -> Boolean = { it.name == name }
+fun byName(name: PropertyName): (PropertyTree) -> Boolean = { it.name == name }
+
+fun byName(name: String): (PropertyTree) -> Boolean = { it.name.value == name }
 
 data class Property(
-    val name: String,
+    val name: PropertyName,
     val description: String? = null,
     val data: Set<Any?> = linkedSetOf()
 ) {
@@ -22,9 +24,10 @@ data class Property(
         get() = data
             .singleOrNull()?.let { if (it is Boolean) it else null }
 
+    @Suppress("UNCHECKED_CAST")
     val singleComparable
         get() = data
-            .singleOrNull()?.let { if (it is Comparable<*>) it else null }
+            .singleOrNull()?.let { if (it is Comparable<*>) it as Comparable<Any> else null }
 
     val strings
         get() = data
@@ -35,8 +38,8 @@ data class Property(
             .filter { it is String }.map { it as Long }
 
     fun update(data: (Set<Any?>) -> Set<Any?> = { it }): Property {
-        val updatedData = data(this.data);
-        return if (updatedData != this.data) this.copy(data = updatedData) else this;
+        val updatedData = data(this.data)
+        return if (updatedData != this.data) this.copy(data = updatedData) else this
     }
 }
 
@@ -84,13 +87,52 @@ sealed class PropertyTree {
             data: Set<Any?> = linkedSetOf(),
             children: List<PropertyTree> = listOf()
         ): PropertyTree =
+            PropertyNode(Property(
+                PropertyName(name), description,
+                if (data is LinkedHashSet) data else linkedSetOf(data)
+            ),
+                children.filter { it.notEmpty })
+
+        fun propertyNodeOf(
+            name: PropertyName,
+            vararg children: PropertyTree
+        ): PropertyTree = propertyNodeOf(
+            name = name, description = null, data = linkedSetOf(),
+            children.asList()
+        )
+
+        fun propertyNodeOf(
+            name: PropertyName,
+            data: Set<Any?> = linkedSetOf(),
+            vararg children: PropertyTree
+        ): PropertyTree = propertyNodeOf(
+            name = name, description = null, data = data,
+            children.asList()
+        )
+
+        fun propertyNodeOf(
+            name: PropertyName,
+            description: String? = null,
+            data: Set<Any?> = linkedSetOf(),
+            vararg children: PropertyTree
+        ): PropertyTree = propertyNodeOf(
+            name = name, description = description, data = data,
+            children.asList()
+        )
+
+        fun propertyNodeOf(
+            name: PropertyName,
+            description: String? = null,
+            data: Set<Any?> = linkedSetOf(),
+            children: List<PropertyTree> = listOf()
+        ): PropertyTree =
             PropertyNode(Property(name, description, if (data is LinkedHashSet) data else linkedSetOf(data)),
                 children.filter { it.notEmpty })
     }
 
     val empty get() = this == EMPTY_NODE
 
-    val notEmpty get() = !empty;
+    val notEmpty get() = !empty
 
     fun find(predicate: (PropertyTree) -> Boolean) = traverse().find(predicate) ?: EMPTY_NODE
 
@@ -110,7 +152,7 @@ sealed class PropertyTree {
         return this.replaceNode(EMPTY_NODE, predicate)
     }
 
-    fun overwriteChildren(replacement: PropertyTree, name: String): PropertyTree =
+    fun overwriteChildren(replacement: PropertyTree, name: PropertyName): PropertyTree =
         overwriteChildren(replacement, byName(name))
 
     fun overwriteChildren(replacement: PropertyTree, predicate: (PropertyTree) -> Boolean): PropertyTree =
@@ -118,7 +160,7 @@ sealed class PropertyTree {
             this
         else updateChildren { it.filter(predicate) + replacement }
 
-    fun updateNode(name: String, updater: (PropertyTree) -> PropertyTree) =
+    fun updateNode(name: PropertyName, updater: (PropertyTree) -> PropertyTree) =
         find(byName(name)).let { if (it.empty) this else replaceNode(it, updater(it)) }
 
     fun replaceNode(target: PropertyTree, replacement: PropertyTree): PropertyTree =
@@ -139,19 +181,19 @@ sealed class PropertyTree {
             .map { it.transform(transformer) }
             .filter { it.notEmpty }
 
-        return transformer(this, children);
+        return transformer(this, children)
     }
 
     fun updateChildren(
         children: (List<PropertyTree>) -> List<PropertyTree> = { it }
     ): PropertyTree {
-        return with(children = children(this.children));
+        return with(children = children(this.children))
     }
 
     abstract fun with(
         property: Property = this.property,
         children: List<PropertyTree> = this.children
-    ): PropertyTree;
+    ): PropertyTree
 
     fun draw(indent: String = "", isLast: Boolean = false): String {
         val result = StringBuilder(drawNode(indent, isLast))
@@ -164,11 +206,11 @@ sealed class PropertyTree {
         return result.toString()
     }
 
-    protected abstract fun drawNode(indent: String?, isLast: Boolean): String;
+    protected abstract fun drawNode(indent: String?, isLast: Boolean): String
 }
 
 private class EmptyNode : PropertyTree() {
-    override val property = EMPTY_PROPERTY;
+    override val property = EMPTY_PROPERTY
     override val children = listOf<PropertyTree>()
 
     override fun toString(): String {
@@ -176,10 +218,10 @@ private class EmptyNode : PropertyTree() {
     }
 
     override fun with(property: Property, children: List<PropertyTree>): PropertyTree {
-        return this;
+        return this
     }
 
-    override fun drawNode(indent: String?, isLast: Boolean) = "null";
+    override fun drawNode(indent: String?, isLast: Boolean) = "null"
 }
 
 private data class PropertyNode(
@@ -197,7 +239,7 @@ private data class PropertyNode(
         else this
 
     override fun drawNode(indent: String?, isLast: Boolean): String {
-        var result: String = this.name
+        var result: String = this.name.value
         if (!this.data.isEmpty()) {
             result += if (this.data.size == 1) {
                 ": " + this.data.first()

@@ -3,16 +3,22 @@ package org.github.ajkettun.propertytree
 import org.github.ajkettun.propertytree.PropertyTree.Companion.propertyNodeOf
 
 data class PropertyNodeBuilder(
-    var name: String? = null,
+    var propertyName: PropertyName? = null,
     var description: String? = null,
     var data: MutableSet<Any?> = mutableSetOf(),
     private var children: MutableList<PropertyNodeBuilder> = mutableListOf()
 ) {
+    var name: String?
+        get() = propertyName?.value
+        set(value) {
+            propertyName = PropertyName(checkNotNull(value, { "Property name required" }))
+        }
+
     fun propertyNode(init: PropertyNodeBuilder.() -> Unit): PropertyNodeBuilder {
-        val node = PropertyNodeBuilder();
-        init(node);
+        val node = PropertyNodeBuilder()
+        init(node)
         children.add(node)
-        return node;
+        return node
     }
 
     fun build(): PropertyTree = propertyNodeOf(checkNotNull(name) { "Property name required" },
@@ -20,7 +26,7 @@ data class PropertyNodeBuilder(
 }
 
 fun propertyNode(init: PropertyNodeBuilder.() -> Unit): PropertyTree {
-    val node = PropertyNodeBuilder();
-    init(node);
-    return node.build();
+    val node = PropertyNodeBuilder()
+    init(node)
+    return node.build()
 }
