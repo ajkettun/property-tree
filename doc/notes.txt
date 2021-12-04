@@ -1,0 +1,23 @@
+TODO
+====
+
+- Goal? Learn Kotlin or really get it done? Kotlin might not work too well from JS.
+
+- Property name, are name spaces needed? How to support enums, bit cleaner to use?
+- Reserved names like empty?
+
+- Test API from Javascript and Java, is it clumsy?
+
+- JSON / Javascript
+- Inheritance, inclusion, constants and filtering
+    -Separate modules with extension functions
+
+- Property forest, property definitions
+
+- Write README with examples
+- Unit tests and coverage
+- Publish to Github
+
+- Custom text file format, json is verbose
+
+- XML?
