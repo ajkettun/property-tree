@@ -1,4 +1,10 @@
+@file:JvmName("PropertyTreeUtils")
+@file:JvmMultifileClass
+
 package org.github.ajkettun.propertytree
+
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
 const val INCLUDE_KEY_SUFFIX = "Include"
 const val EXCLUDE_KEY_SUFFIX = "Exclude"
@@ -10,27 +16,27 @@ val CRITERIA_SUFFIXES: Set<String> = hashSetOf(
     INTERVAL_START_KEY_SUFFIX, INTERVAL_END_KEY_SUFFIX
 )
 
-fun PropertyName.getBaseProperty() =
-    CRITERIA_SUFFIXES.reduce { name, suffix -> name.replace(suffix, "") }
+val PropertyName.criterionBaseProperty
+    get() = CRITERIA_SUFFIXES.reduce { name, suffix -> name.replace(suffix, "") }
 
-fun PropertyName.isCriteria() =
-    CRITERIA_SUFFIXES.any { suffix -> value.endsWith(suffix) }
+val PropertyName.isCriterion
+    get() = CRITERIA_SUFFIXES.any { suffix -> value.endsWith(suffix) }
 
-fun PropertyName.isExcludeIncludeCriteria() = isIncludeCriteria() || isExcludeCriteria()
+val PropertyName.isExcludeIncludeCriterion get() = isIncludeCriterion || isExcludeCriterion
 
-fun PropertyName.isIncludeCriteria() = value.endsWith(INCLUDE_KEY_SUFFIX)
+val PropertyName.isIncludeCriterion get() = value.endsWith(INCLUDE_KEY_SUFFIX)
 
-fun PropertyName.isExcludeCriteria() = value.endsWith(EXCLUDE_KEY_SUFFIX)
+val PropertyName.isExcludeCriterion get() = value.endsWith(EXCLUDE_KEY_SUFFIX)
 
-fun PropertyName.isIntervalCriteria() = isIntervalStartCriteria() || isIntervalEndCriteria()
+val PropertyName.isIntervalCriterion get() = isIntervalStartCriterion || isIntervalEndCriterion
 
-fun PropertyName.isIntervalStartCriteria() = value.endsWith(INTERVAL_START_KEY_SUFFIX)
+val PropertyName.isIntervalStartCriterion get() = value.endsWith(INTERVAL_START_KEY_SUFFIX)
 
-fun PropertyName.isIntervalEndCriteria() = value.endsWith(INTERVAL_END_KEY_SUFFIX)
+val PropertyName.isIntervalEndCriterion get() = value.endsWith(INTERVAL_END_KEY_SUFFIX)
 
-fun PropertyName.getEndCriteriaForStart() = getBaseProperty() + INTERVAL_END_KEY_SUFFIX
+val PropertyName.isEndCriterionForStart get() = criterionBaseProperty + INTERVAL_END_KEY_SUFFIX
 
-fun PropertyTree.filter(criteria: Criteria) = criteria.satisfiedBy(this)
+fun byCriteria(criteria: Criteria): (PropertyTree) -> Boolean = { criteria.satisfiedBy(it) }
 
 data class Criterion(val name: PropertyName, val values: Set<Any>) {
     constructor(name: PropertyName, vararg value: Any) : this(name, setOf(value.toSet()))

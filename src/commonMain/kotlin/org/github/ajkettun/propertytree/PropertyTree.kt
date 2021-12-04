@@ -1,4 +1,11 @@
+@file:JvmName("PropertyTreeUtils")
+@file:JvmMultifileClass
+
 package org.github.ajkettun.propertytree
+
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
+import kotlin.jvm.JvmStatic
 
 val EMPTY_NODE: PropertyTree = EmptyNode()
 
@@ -6,9 +13,9 @@ private val EMPTY_PROPERTY: Property = Property(EMPTY, null, linkedSetOf())
 
 data class PropertyName(val value: String)
 
-fun byName(name: PropertyName): (PropertyTree) -> Boolean = { it.name == name }
+fun byName(name: PropertyName): (PropertyTree) -> Boolean = { it.name == name.value }
 
-fun byName(name: String): (PropertyTree) -> Boolean = { it.name.value == name }
+fun byName(name: String): (PropertyTree) -> Boolean = { it.name == name }
 
 data class Property(
     val name: PropertyName,
@@ -16,9 +23,9 @@ data class Property(
     val data: Set<Any?> = linkedSetOf()
 ) {
 
-    val set get() = singleBoolean ?: false
+    val isSet get() = singleBoolean ?: false
 
-    val unset get() = singleBoolean?.let { !it } ?: false
+    val isUnset get() = singleBoolean?.let { !it } ?: false
 
     val singleBoolean
         get() = data
@@ -47,13 +54,15 @@ sealed class PropertyTree {
     abstract val property: Property
     abstract val children: List<PropertyTree>
 
-    val name get() = property.name
+    val name get() = property.name.value
     val description get() = property.description
     val data get() = property.data
 
     companion object {
+        @JvmStatic
         fun empty(): PropertyTree = EMPTY_NODE
 
+        @JvmStatic
         fun propertyNodeOf(
             name: String,
             vararg children: PropertyTree
@@ -62,6 +71,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: String,
             data: Set<Any?> = linkedSetOf(),
@@ -71,6 +81,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: String,
             description: String? = null,
@@ -81,6 +92,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: String,
             description: String? = null,
@@ -93,6 +105,7 @@ sealed class PropertyTree {
             ),
                 children.filter { it.notEmpty })
 
+        @JvmStatic
         fun propertyNodeOf(
             name: PropertyName,
             vararg children: PropertyTree
@@ -101,6 +114,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: PropertyName,
             data: Set<Any?> = linkedSetOf(),
@@ -110,6 +124,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: PropertyName,
             description: String? = null,
@@ -120,6 +135,7 @@ sealed class PropertyTree {
             children.asList()
         )
 
+        @JvmStatic
         fun propertyNodeOf(
             name: PropertyName,
             description: String? = null,
@@ -136,9 +152,15 @@ sealed class PropertyTree {
 
     fun find(predicate: (PropertyTree) -> Boolean) = traverse().find(predicate) ?: EMPTY_NODE
 
+    fun findAll(predicate: (PropertyTree) -> Boolean) = traverse().filter(predicate)
+
     fun first(predicate: (PropertyTree) -> Boolean) = traverse().first(predicate)
 
-    fun filter(predicate: (PropertyTree) -> Boolean) = traverse().filter(predicate)
+    fun findChild(predicate: (PropertyTree) -> Boolean) = children.find(predicate) ?: EMPTY_NODE
+
+    fun findChildren(predicate: (PropertyTree) -> Boolean) = children.filter(predicate)
+
+    fun firstChild(predicate: (PropertyTree) -> Boolean) = children.first(predicate)
 
     /**
      * Traverses the tree lazily in pre-order.
@@ -147,6 +169,8 @@ sealed class PropertyTree {
         yield(this@PropertyTree)
         yieldAll(children.flatMap { it.traverse() })
     }
+
+    fun filter(predicate: (PropertyTree) -> Boolean) = prune { !predicate(it) }
 
     fun prune(predicate: (PropertyTree) -> Boolean): PropertyTree {
         return this.replaceNode(EMPTY_NODE, predicate)
@@ -239,7 +263,7 @@ private data class PropertyNode(
         else this
 
     override fun drawNode(indent: String?, isLast: Boolean): String {
-        var result: String = this.name.value
+        var result: String = this.name
         if (!this.data.isEmpty()) {
             result += if (this.data.size == 1) {
                 ": " + this.data.first()

@@ -7,8 +7,12 @@ TODO
 - Reserved names like empty?
 
 - Test API from Javascript and Java, is it clumsy?
+    - Java is OK
 
 - JSON / Javascript
+
+- Validation
+
 - Inheritance, inclusion, constants and filtering
     -Separate modules with extension functions
 

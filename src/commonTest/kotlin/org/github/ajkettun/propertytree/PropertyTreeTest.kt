@@ -89,10 +89,8 @@ class PropertyTreeTest {
     }
 
     @Test
-    fun filter() {
-        val traversal = testPropertyTree.filter { it.name.startsWith("child") }.map { it.name }
+    fun findAll() {
+        val traversal = testPropertyTree.findAll { it.name.startsWith("child") }.map { it.name }
         assertEquals(listOf("child1", "child2", "child3"), traversal.toList())
     }
-
-
 }
