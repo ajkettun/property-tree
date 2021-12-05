@@ -25,11 +25,28 @@ data class Property(
 
     val isSet get() = singleBoolean ?: false
 
-    val isUnset get() = singleBoolean?.let { !it } ?: false
+    val isNotSet get() = singleBoolean?.let { !it } ?: false
 
     val singleBoolean
         get() = data
             .singleOrNull()?.let { if (it is Boolean) it else null }
+
+    val singleString
+        get() = data
+            .singleOrNull()?.let { if (it is String) it else null }
+
+    val singleLong
+        get() = data
+            .singleOrNull()?.let { if (it is Long) it else null }
+
+    val singleInt
+        get() = data
+            .singleOrNull()?.let { if (it is Int) it else null }
+
+    @Suppress("UNCHECKED_CAST")
+    val singleObject
+        get() = data
+            .singleOrNull()?.let { if (it is Map<*, *>) it as Map<String, Any?> else null }
 
     @Suppress("UNCHECKED_CAST")
     val singleComparable
@@ -38,11 +55,20 @@ data class Property(
 
     val strings
         get() = data
-            .filter { it is String }.map { it as String }
+            .filter { it is String }.map { it as String }.toSet()
 
     val longs
         get() = data
-            .filter { it is String }.map { it as Long }
+            .filter { it is Long }.map { it as Long }.toSet()
+
+    val ints
+        get() = data
+            .filter { it is Int }.map { it as Int }.toSet()
+
+    @Suppress("UNCHECKED_CAST")
+    val objects
+        get() = data
+            .filter { it is Map<*, *> }.map { it as Map<String, Any?> }.toSet()
 
     fun update(data: (Set<Any?>) -> Set<Any?> = { it }): Property {
         val updatedData = data(this.data)
@@ -101,7 +127,7 @@ sealed class PropertyTree {
         ): PropertyTree =
             PropertyNode(Property(
                 PropertyName(name), description,
-                if (data is LinkedHashSet) data else linkedSetOf(data)
+                data
             ),
                 children.filter { it.notEmpty })
 
@@ -179,6 +205,9 @@ sealed class PropertyTree {
     fun overwriteChildren(replacement: PropertyTree, name: PropertyName): PropertyTree =
         overwriteChildren(replacement, byName(name))
 
+    fun overwriteChildren(replacement: PropertyTree, name: String): PropertyTree =
+        overwriteChildren(replacement, byName(name))
+
     fun overwriteChildren(replacement: PropertyTree, predicate: (PropertyTree) -> Boolean): PropertyTree =
         if (this.empty)
             this
@@ -186,6 +215,8 @@ sealed class PropertyTree {
 
     fun updateNode(name: PropertyName, updater: (PropertyTree) -> PropertyTree) =
         find(byName(name)).let { if (it.empty) this else replaceNode(it, updater(it)) }
+
+    fun updateNode(name: String, updater: (PropertyTree) -> PropertyTree) = updateNode(PropertyName(name), updater)
 
     fun replaceNode(target: PropertyTree, replacement: PropertyTree): PropertyTree =
         replaceNode(replacement) { it == target }
